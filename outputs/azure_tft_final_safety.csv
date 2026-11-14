@@ -1,0 +1,4 @@
+model,high_load_count,high_load_underprediction_pct,high_load_MAE
+Original TFT,111,90.990990990991,842.4362336579744
+Log-transformed TFT,111,83.78378378378379,636.8160724054055
+Persistence (previous bucket),111,65.76576576576578,410.3783783783784

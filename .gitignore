@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+*.so
+
+# Virtual environment
+.venv/
+venv/
+env/
+ENV/
+
+# Large raw data files (kept locally, not committed)
+data/azure_trace_raw/
+data/AzureFunctionsInvocationTraceForTwoWeeksJan2021.rar
+
+# Large model binaries (too big for GitHub without LFS)
+outputs/tft_azure_state_dict.pt
+outputs/tft_azure_log_state_dict.pt
+outputs/tft_eval_state_dict.pt
+outputs/tft_state_dict.pt
+outputs/tft_holdout_predictions.npz
+
+# Lightning logs
+lightning_logs/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Monitoring logs (generated at runtime)
+outputs/monitoring_logs/
+
+# Planner logs (generated at runtime)
+outputs/planner_logs/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Env vars / secrets
+.env
+*.key

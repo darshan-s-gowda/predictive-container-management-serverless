@@ -1,0 +1,10 @@
+model,segment,MAE,RMSE,count
+Original TFT,Overall,226.717,637.514,606
+Original TFT,High load,1511.206,2196.278,48
+Original TFT,Other load,116.224,162.631,558
+Log-transformed TFT,Overall,182.607,489.571,606
+Log-transformed TFT,High load,1150.115,1656.164,48
+Log-transformed TFT,Other load,99.381,156.047,558
+Persistence (previous bucket),Overall,153.185,379.826,606
+Persistence (previous bucket),High load,636.708,995.78,48
+Persistence (previous bucket),Other load,111.591,267.172,558

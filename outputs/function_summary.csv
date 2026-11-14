@@ -1,0 +1,4 @@
+function_id,invocations,cold_starts,cold_start_rate,mean_duration_ms,p95_duration_ms,mean_total_latency_ms,p95_total_latency_ms,sla_violations,sla_violation_rate
+recommend,888,38,0.0428,349.88,479.83,414.07,527.46,59,0.0664
+search,2108,99,0.047,119.82,168.96,190.26,204.09,99,0.047
+user_info,2971,158,0.0532,25.15,33.11,104.92,1518.23,158,0.0532

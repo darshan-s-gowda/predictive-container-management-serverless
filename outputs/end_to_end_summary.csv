@@ -1,0 +1,7 @@
+policy,mean_latency_ms_mean,mean_latency_ms_std,p95_latency_ms_mean,p95_latency_ms_std,mean_bucket_p95_latency_ms_mean,mean_bucket_p95_latency_ms_std,cold_start_load_proxy_mean,cold_start_load_proxy_std,sla_violation_rate_mean,sla_violation_rate_std,avg_warm_containers_mean,avg_warm_containers_std,avg_energy_proxy_mean,avg_energy_proxy_std
+Fixed-4,210.761,0.181,70.0,0.0,263.45,0.228,7493.477,4.947,0.03,0.0,4.0,0.0,3.519,0.002
+Log TFT + Rule,213.221,1.204,270.028,41.332,266.526,1.505,6981.932,10.739,0.053,0.002,1.456,0.007,1.483,0.004
+Original TFT + Rule,213.221,1.204,270.028,41.332,266.526,1.505,6981.932,10.739,0.053,0.002,1.455,0.005,1.483,0.004
+Persistence + Rule,212.315,1.285,203.023,64.312,265.395,1.607,6967.816,12.779,0.051,0.001,1.465,0.007,1.491,0.004
+Planner-assisted,213.299,1.311,280.546,35.881,266.624,1.64,6982.344,11.198,0.053,0.002,1.454,0.007,1.483,0.004
+Reactive Rule-based,211.632,1.213,179.079,59.415,264.538,1.519,6963.629,12.364,0.05,0.001,1.674,0.005,1.658,0.006

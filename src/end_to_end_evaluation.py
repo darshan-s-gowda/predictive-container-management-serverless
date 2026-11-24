@@ -557,13 +557,78 @@ def main():
             f"mean={np.mean(values):.3f}"
         )
 
-    # The previous PPO model was trained on raw invocation counts.
-    # It is intentionally excluded until retrained using concurrency.
-    print(
-        "\nPPO evaluation skipped: the existing PPO model "
-        "was trained on raw invocation counts. It must be "
-        "retrained using the calibrated concurrency scale."
-    )
+    # ----------------------------------------------------------------
+    # Load calibrated PPO model (trained on Azure concurrency scale)
+    # ----------------------------------------------------------------
+    CALIBRATED_PPO_PATH = OUT / "ppo_container_controller_calibrated.zip"
+    _calibrated_ppo = None
+
+    try:
+        from stable_baselines3 import PPO as _SB3PPO
+        from ppo_calibrated_env import ACTION_MAP as _PPO_ACTION_MAP
+        _calibrated_ppo = _SB3PPO.load(str(CALIBRATED_PPO_PATH))
+        print(f"\nLoaded calibrated PPO model: {CALIBRATED_PPO_PATH}")
+    except FileNotFoundError:
+        print(
+            f"\nCalibrated PPO model not found at {CALIBRATED_PPO_PATH}. "
+            "Run src/train_ppo_calibrated.py first."
+        )
+    except Exception as _ppo_exc:
+        print(f"\nCould not load calibrated PPO: {_ppo_exc}")
+
+    def ppo_calibrated_action(obs: dict) -> str:
+        """
+        Convert the simulator obs dict to the 11-dim PPO observation vector
+        and query the calibrated PPO policy. Returns a simulator action string.
+
+        Observation vector layout (must match ppo_calibrated_env.py exactly):
+          0  prev_load_norm         / LOAD_NORM (50)
+          1  next_forecast_norm     / LOAD_NORM
+          2  warm_containers_norm   / 50
+          3  utilisation            load / max(capacity, 1)
+          4  latency_norm           latency / SLA_MS
+          5  sla_risk               clip(latency/SLA_MS - 1, -1, 1)
+          6  energy_norm            energy / ENERGY_NORM (10)
+          7  cold_start_proxy       0.0 (not available in this obs dict)
+          8  headroom_norm          (capacity - load) / LOAD_NORM, signed
+          9  time_in_episode_norm   0.5 (unknown mid-episode)
+         10  cooldown_norm          0.5 (unknown)
+
+        Units: same calibrated concurrency as all other policies.
+        """
+        if _calibrated_ppo is None:
+            return reactive_rule_action(obs)
+
+        LOAD_NORM = 50.0
+        ENERGY_NORM = 10.0
+
+        prev_load = float(obs["actual_invocations"])
+        next_fc   = float(obs["predicted_invocations"])
+        warm      = int(obs["warm_containers"])
+        latency   = float(obs["latency_ms"])
+        energy    = float(obs["energy_proxy"])
+
+        capacity    = warm * 10.0
+        utilisation = prev_load / max(capacity, 1.0)
+        headroom    = (capacity - prev_load) / LOAD_NORM
+        sla_risk    = float(np.clip(latency / SLA_MS - 1.0, -1.0, 1.0))
+
+        obs_vec = np.array([
+            prev_load / LOAD_NORM,
+            next_fc   / LOAD_NORM,
+            warm / 50.0,
+            float(np.clip(utilisation, 0.0, 3.0)),
+            latency / SLA_MS,
+            sla_risk,
+            energy / ENERGY_NORM,
+            0.0,            # cold_start_proxy unavailable here
+            float(np.clip(headroom, -3.0, 3.0)),
+            0.5,            # time_in_episode_norm (mid-episode estimate)
+            0.5,            # cooldown_norm (unknown)
+        ], dtype=np.float32)
+
+        action_int, _ = _calibrated_ppo.predict(obs_vec, deterministic=True)
+        return _PPO_ACTION_MAP[int(action_int)]
 
     from serverless_simulator import (
         fixed_policy,
@@ -603,6 +668,18 @@ def main():
             planner_action_from_obs,
         ),
     ]
+
+    # Add calibrated PPO if model loaded successfully
+    if _calibrated_ppo is not None:
+        policies.append((
+            "PPO (calibrated)",
+            forecasts["persistence"],   # PPO uses persistence forecast as input
+            ppo_calibrated_action,
+        ))
+        print(
+            "\nPPO (calibrated): trained on Azure concurrency (training segment). "
+            "Evaluated on the same test segment as all other policies.\n"
+        )
 
     results = []
     policy_order = []

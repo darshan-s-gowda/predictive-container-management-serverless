@@ -176,3 +176,32 @@ major_1/
 # To reproduce 7-policy evaluation:
 .\.venv\Scripts\python.exe src\end_to_end_evaluation.py
 ```
+
+---
+
+## Live E-Commerce Demo ("ShopPulse Serverless")
+
+Run a live dummy e-commerce website backed by real OS worker subprocesses, live HTTP latency & cold-start measurement, live `/metrics` Prometheus exposition, and an interactive **Predictive vs. Reactive** container management console:
+
+```powershell
+# Start the live e-commerce website & predictive container console
+.\.venv\Scripts\python.exe src\ecommerce_app\server.py 8080
+# Storefront & Console: http://127.0.0.1:8080
+# Prometheus metrics:   http://127.0.0.1:8080/metrics
+```
+
+### Optional: Full Docker + Prometheus + Grafana + Ollama Stack
+
+If Docker Desktop and/or Ollama are running on your machine:
+
+```powershell
+# 1. Start Prometheus + Grafana + ShopPulse containers
+docker compose -f deploy/docker-compose.yml up --build
+
+# 2. (Optional) Enable live Qwen3 LLM planning via Ollama
+ollama pull qwen3:8b
+$env:PLANNER_BACKEND="ollama"
+$env:PLANNER_ENDPOINT="http://localhost:11434"
+$env:PLANNER_MODEL="qwen3:8b"
+.\.venv\Scripts\python.exe src\ecommerce_app\server.py 8080
+```

@@ -1,13 +1,14 @@
 """
 src/executor_adapter.py
 ========================
-Milestone 6 — Execution Layer (Dry-Run Adapter).
+Milestone 6 + Live Execution Layer — Executor Adapters.
 
 Design rules (per IMPLEMENTATION_AGENT_PROMPT.md):
   - DryRunAdapter NEVER touches a real cluster.
+  - DockerAdapter and KubernetesAdapter default to dry_run=True / allow_live=False
+    to prevent accidental cluster/container modifications unless explicitly enabled.
   - Every execution attempt is recorded in an append-only audit log.
   - Actions must pass the ALLOWED_ACTIONS allowlist before execution.
-  - Kubernetes adapter interface is stubbed; raises NotImplementedError by default.
   - audit log: outputs/executor_audit.jsonl
 """
 
@@ -16,9 +17,10 @@ from __future__ import annotations
 import json
 import logging
 import os
+import subprocess
 import uuid
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -31,7 +33,7 @@ ALLOWED_ACTIONS = {"NO_OP", "PREWARM", "SCALE_OUT", "SCALE_IN", "REUSE", "TERMIN
 class ExecutionResult:
     action:          str
     approved:        bool          # passed allowlist check
-    dry_run:         bool          # True for DryRunAdapter
+    dry_run:         bool          # True unless live execution enabled
     timestamp:       str           # ISO-8601 UTC
     correlation_id:  str           # links back to DecisionRecord
     reason:          str           # why approved or rejected
@@ -46,9 +48,11 @@ class ExecutorAdapter(ABC):
     dry_run: bool = True
 
     def __init__(self, audit_log_path: str = "outputs/executor_audit.jsonl"):
-        os.makedirs(os.path.dirname(audit_log_path) if os.path.dirname(audit_log_path) else ".", exist_ok=True)
+        parent = os.path.dirname(audit_log_path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
         self._audit_path = audit_log_path
-        self._audit_fh   = open(audit_log_path, "a")
+        self._audit_fh   = open(audit_log_path, "a", encoding="utf-8")
 
     def execute(self, action: str, state: dict, correlation_id: Optional[str] = None) -> ExecutionResult:
         """
@@ -123,7 +127,6 @@ class DryRunAdapter(ExecutorAdapter):
     name    = "dry_run"
     dry_run = True
 
-    # What each action "would do" in a real cluster
     _ACTION_DESCRIPTIONS = {
         "NO_OP":         "No change to cluster; idle monitoring tick.",
         "PREWARM":       "Would pre-warm +1 container (pull image, init runtime).",
@@ -140,22 +143,123 @@ class DryRunAdapter(ExecutorAdapter):
         return f"DRY-RUN OK: {desc}"
 
 
-class KubernetesAdapter(ExecutorAdapter):
+class DockerAdapter(ExecutorAdapter):
     """
-    Kubernetes adapter interface stub.
-    Raises NotImplementedError — do NOT remove this guard.
-    Real implementation requires: cluster kubeconfig, RBAC, dry_run=False flag.
+    Docker container lifecycle adapter using the `docker` CLI.
+    Defaults to dry_run=True; set dry_run=False when Docker daemon is running
+    to manage real containers labeled `app=serverless-worker`.
     """
-    name    = "kubernetes"
-    dry_run = True  # Always dry-run until explicitly overridden with care
+    name = "docker"
 
-    def __init__(self, namespace: str = "serverless", **kwargs):
+    def __init__(
+        self,
+        image: str = "python:3.11-slim",
+        container_prefix: str = "serverless-worker",
+        dry_run: bool = True,
+        min_containers: int = 1,
+        max_containers: int = 50,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
-        self.namespace = namespace
+        self.image = image
+        self.container_prefix = container_prefix
+        self.dry_run = dry_run
+        self.min_containers = min_containers
+        self.max_containers = max_containers
+
+    def _list_workers(self) -> list[str]:
+        proc = subprocess.run(
+            ["docker", "ps", "-q", "--filter", f"name={self.container_prefix}"],
+            capture_output=True, text=True, timeout=10, check=True,
+        )
+        return [cid.strip() for cid in proc.stdout.splitlines() if cid.strip()]
 
     def _execute(self, action: str, state: dict) -> str:
-        raise NotImplementedError(
-            f"KubernetesAdapter._execute not implemented for action={action!r}. "
-            "This is an intentional stub to prevent accidental cluster modifications. "
-            "See IMPLEMENTATION_PLAN.md §Executor for how to implement this safely."
-        )
+        warm = int(state.get("warm_containers", 1))
+
+        if action in ("NO_OP", "REUSE"):
+            return f"{'DRY-RUN ' if self.dry_run else ''}DOCKER OK: {action} (warm={warm})"
+
+        if action in ("PREWARM", "SCALE_OUT"):
+            if warm >= self.max_containers:
+                return f"DOCKER SKIP: already at max_containers={self.max_containers}"
+            name = f"{self.container_prefix}-{uuid.uuid4().hex[:6]}"
+            cmd = ["docker", "run", "-d", "--name", name, "--label", "app=serverless-worker",
+                   self.image, "sleep", "3600"]
+            if self.dry_run:
+                return f"DRY-RUN DOCKER: would run {' '.join(cmd)}"
+            subprocess.run(cmd, capture_output=True, text=True, timeout=30, check=True)
+            return f"DOCKER LIVE OK: started container {name}"
+
+        if action in ("SCALE_IN", "TERMINATE_IDLE"):
+            if warm <= self.min_containers:
+                return f"DOCKER SKIP: already at min_containers={self.min_containers}"
+            if self.dry_run:
+                return f"DRY-RUN DOCKER: would stop/remove 1 {self.container_prefix} container"
+            workers = self._list_workers()
+            if not workers:
+                return "DOCKER LIVE SKIP: no running worker containers found"
+            target = workers[-1]
+            subprocess.run(["docker", "rm", "-f", target],
+                           capture_output=True, text=True, timeout=15, check=True)
+            return f"DOCKER LIVE OK: removed container {target}"
+
+        return f"DOCKER OK: {action}"
+
+
+class KubernetesAdapter(ExecutorAdapter):
+    """
+    Kubernetes Deployment scaling adapter using `kubectl`.
+    By default (`allow_live=False`), raises NotImplementedError as a safety guard
+    to prevent accidental cluster modifications.
+    Pass `allow_live=True, dry_run=False` to execute real `kubectl scale` commands.
+    """
+    name = "kubernetes"
+
+    def __init__(
+        self,
+        namespace: str = "serverless",
+        deployment: str = "serverless-worker",
+        dry_run: bool = True,
+        allow_live: bool = False,
+        min_replicas: int = 1,
+        max_replicas: int = 50,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.namespace = namespace
+        self.deployment = deployment
+        self.dry_run = dry_run
+        self.allow_live = allow_live
+        self.min_replicas = min_replicas
+        self.max_replicas = max_replicas
+
+    def _build_scale_cmd(self, target_replicas: int) -> list[str]:
+        cmd = [
+            "kubectl", "scale",
+            f"deployment/{self.deployment}",
+            f"--replicas={target_replicas}",
+            f"--namespace={self.namespace}",
+        ]
+        if self.dry_run:
+            cmd.append("--dry-run=client")
+        return cmd
+
+    def _execute(self, action: str, state: dict) -> str:
+        if not self.allow_live:
+            raise NotImplementedError(
+                f"KubernetesAdapter._execute live execution disabled for action={action!r}. "
+                "Pass allow_live=True (and dry_run=False for real scaling) when connected to a cluster."
+            )
+
+        warm = int(state.get("warm_containers", 1))
+        if action in ("PREWARM", "SCALE_OUT"):
+            target = min(self.max_replicas, warm + 1)
+        elif action in ("SCALE_IN", "TERMINATE_IDLE"):
+            target = max(self.min_replicas, warm - 1)
+        else:
+            return f"K8S OK: {action} (replicas={warm})"
+
+        cmd = self._build_scale_cmd(target)
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=15, check=True)
+        return f"K8S {'DRY-RUN' if self.dry_run else 'LIVE'} OK: {proc.stdout.strip() or ' '.join(cmd)}"

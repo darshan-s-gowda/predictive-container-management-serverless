@@ -1,0 +1,8 @@
+experiment_id,description,forecast_type,planner,controller,mean_latency_ms,sla_viol_rate,mean_warm_containers,mean_energy_proxy,n_seeds,n_steps,note
+E0,"No-forecast baseline, Rules, Rules, Simulator",see description,Rules,Rules,70.0,0.0,8.41,6.7318,10,605,SIMULATED PROXY — not real cloud measurement
+E1,"Persistence forecast, Rules, Rules, Simulator",see description,Rules,Rules,70.0,0.0,5.06,4.0518,10,605,SIMULATED PROXY — not real cloud measurement
+E2,"TFT forecast, Rules, Rules, Simulator",see description,Rules,Rules,70.0,0.0,4.12,3.3065,10,605,SIMULATED PROXY — not real cloud measurement
+E3,"TFT forecast, Qwen3(local), Rules, Simulator",see description,Qwen3(local/rule),Rules,70.0,0.0,4.12,3.3065,10,605,SIMULATED PROXY — not real cloud measurement
+E4,"Persistence forecast, Rules, PPO, Simulator",see description,Rules,PPO,70.0,0.0,7.44,5.9505,10,605,SIMULATED PROXY — not real cloud measurement
+E5,"TFT forecast, Rules, PPO, Simulator",see description,Rules,PPO,70.0,0.0,8.04,6.4344,10,605,SIMULATED PROXY — not real cloud measurement
+E6,"TFT forecast, Qwen3(local), PPO, Simulator",see description,Qwen3(local/rule),PPO,70.0,0.0,8.04,6.4344,10,605,SIMULATED PROXY — not real cloud measurement

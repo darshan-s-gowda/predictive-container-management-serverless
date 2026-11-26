@@ -1,0 +1,2460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Decision Replay Viewer</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background:#f5f7fa; color:#222; }
+  h1   { color:#2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
+  .summary { background:#fff; padding:16px; border-radius:8px; margin-bottom:20px;
+              box-shadow:0 1px 4px rgba(0,0,0,0.1); }
+  .card { background:#fff; border-radius:8px; margin-bottom:12px; padding:12px 16px;
+           box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+  .card-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
+  .step-badge   { background:#2c3e50; color:#fff; border-radius:4px; padding:2px 8px; font-weight:bold; }
+  .action-badge { border-radius:4px; padding:2px 10px; font-weight:bold; color:#333; }
+  .sla-badge    { color:#555; font-size:0.9em; }
+  .warn-badge   { background:#e74c3c; color:#fff; border-radius:4px; padding:2px 8px; font-size:0.85em; }
+  .card-body    { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; font-size:0.88em; }
+  .col          { background:#f8f9fa; border-radius:4px; padding:8px; }
+  code          { background:#edf2f7; padding:1px 4px; border-radius:3px; font-size:0.9em; }
+  ul            { list-style:none; padding:0; }
+  li            { margin-bottom:4px; }
+  .filter-bar   { margin-bottom:16px; }
+  input[type=text] { padding:6px 10px; border:1px solid #ccc; border-radius:4px; width:280px; font-size:1em; }
+  @media(max-width:800px) { .card-body { grid-template-columns:1fr 1fr; } }
+  @media(max-width:500px) { .card-body { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<h1>🔍 Decision Replay Viewer</h1>
+<div class="summary">
+  <b>Trace summary</b>: 60 steps &nbsp;|&nbsp;
+  SLA violations: 0 (0.0%) &nbsp;|&nbsp;
+  Avg latency: 70.0 ms &nbsp;|&nbsp;
+  Avg warm containers: 14.50<br><br>
+  <b>Action distribution:</b>
+  <ul style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"><li><span style='background:#aec6cf;padding:2px 6px;border-radius:3px;'>NO_OP</span>: 40 (66.7%)</li><li><span style='background:#77dd77;padding:2px 6px;border-radius:3px;'>SCALE_OUT</span>: 20 (33.3%)</li></ul>
+  <p style="font-size:0.8em;color:#888;">⚠️ All metrics are SIMULATED PROXIES derived from the Azure trace workload.
+  Not real cloud measurements.</p>
+</div>
+
+<div class="filter-bar">
+  <input type="text" id="searchBox" placeholder="Filter steps by action, risk, or text…"
+         onkeyup="filterCards()" />
+</div>
+
+<div id="cards">
+
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 0</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>12.74</code><br>
+              Forecast:    <code>13.17</code><br>
+              Warm containers: <code>5</code><br>
+              Energy proxy: <code>4.000</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>ac598b50-3155-49f5-abb1-c7ffc9a11e81</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 1</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>9.39</code><br>
+              Forecast:    <code>9.33</code><br>
+              Warm containers: <code>5</code><br>
+              Energy proxy: <code>4.000</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>a50b76e0-36d7-4a17-a134-71c062f2ea26</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 2</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>13.59</code><br>
+              Forecast:    <code>13.76</code><br>
+              Warm containers: <code>5</code><br>
+              Energy proxy: <code>4.000</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>552cba83-1949-4a0d-acfd-e737b82c43d4</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 3</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>11.97</code><br>
+              Forecast:    <code>12.61</code><br>
+              Warm containers: <code>6</code><br>
+              Energy proxy: <code>4.800</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>f7c613ec-8070-45cf-90f3-883f46a0296b</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 4</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>5.94</code><br>
+              Forecast:    <code>6.10</code><br>
+              Warm containers: <code>6</code><br>
+              Energy proxy: <code>4.800</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>bc5dc1fc-4f3b-43ef-909f-153c2ae53f64</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 5</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>14.76</code><br>
+              Forecast:    <code>14.91</code><br>
+              Warm containers: <code>6</code><br>
+              Energy proxy: <code>4.800</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>2cd54706-7d00-4b6c-ba46-062f05e293ca</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 6</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>12.61</code><br>
+              Forecast:    <code>12.76</code><br>
+              Warm containers: <code>7</code><br>
+              Energy proxy: <code>5.600</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>389a28e4-73d7-465e-aa82-bf20c001a75c</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 7</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>12.86</code><br>
+              Forecast:    <code>12.36</code><br>
+              Warm containers: <code>7</code><br>
+              Energy proxy: <code>5.600</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>d167e73a-d815-4bec-a484-81bb52f172ac</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 8</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>6.28</code><br>
+              Forecast:    <code>5.69</code><br>
+              Warm containers: <code>7</code><br>
+              Energy proxy: <code>5.600</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>15cf297e-cf9d-4f4d-93e3-5733ac9307c9</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 9</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>9.50</code><br>
+              Forecast:    <code>9.38</code><br>
+              Warm containers: <code>8</code><br>
+              Energy proxy: <code>6.400</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>e4061d59-ac66-477a-b5df-f116aca0f2ec</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 10</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>8.71</code><br>
+              Forecast:    <code>8.21</code><br>
+              Warm containers: <code>8</code><br>
+              Energy proxy: <code>6.400</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>dfc33407-4794-4623-b6f9-62f137dd7617</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 11</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>14.27</code><br>
+              Forecast:    <code>14.01</code><br>
+              Warm containers: <code>8</code><br>
+              Energy proxy: <code>6.400</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>963c04dc-da7f-4f8c-84b5-614b3103060a</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 12</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>11.44</code><br>
+              Forecast:    <code>12.25</code><br>
+              Warm containers: <code>9</code><br>
+              Energy proxy: <code>7.200</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>38d5673e-177d-45bd-a6cb-9a3e17f1d44a</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 13</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>13.23</code><br>
+              Forecast:    <code>12.52</code><br>
+              Warm containers: <code>9</code><br>
+              Energy proxy: <code>7.200</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>1a225fd4-e576-4cc9-a774-b89b7d2632f8</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 14</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>9.43</code><br>
+              Forecast:    <code>8.60</code><br>
+              Warm containers: <code>9</code><br>
+              Energy proxy: <code>7.200</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>8c25e5b0-b33d-4aa3-a172-6a12d665e8f0</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 15</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>49.09</code><br>
+              Forecast:    <code>46.94</code><br>
+              Warm containers: <code>10</code><br>
+              Energy proxy: <code>8.000</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>93544984-5d02-4bc5-9774-04af603e9bc7</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 16</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>62.18</code><br>
+              Forecast:    <code>59.62</code><br>
+              Warm containers: <code>10</code><br>
+              Energy proxy: <code>8.000</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>aa14b5c7-2168-473a-916a-c694bfdc925d</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 17</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>42.55</code><br>
+              Forecast:    <code>43.93</code><br>
+              Warm containers: <code>10</code><br>
+              Energy proxy: <code>8.000</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>6b990025-82d5-4292-92e9-4fa1ff457644</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 18</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>73.11</code><br>
+              Forecast:    <code>73.94</code><br>
+              Warm containers: <code>11</code><br>
+              Energy proxy: <code>8.800</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>d72db144-ce0b-4879-bad1-98a9c2222026</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 19</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>65.27</code><br>
+              Forecast:    <code>68.97</code><br>
+              Warm containers: <code>11</code><br>
+              Energy proxy: <code>8.800</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>347e75a8-ee5f-4e01-bcee-73eab5c04e61</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 20</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>70.32</code><br>
+              Forecast:    <code>72.63</code><br>
+              Warm containers: <code>11</code><br>
+              Energy proxy: <code>8.800</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>f7e0c00f-fe29-43a8-bbb2-8b33f57cc597</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 21</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>54.18</code><br>
+              Forecast:    <code>53.17</code><br>
+              Warm containers: <code>12</code><br>
+              Energy proxy: <code>9.600</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>aed957ee-7de8-4bee-a39d-797c31866d76</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 22</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>78.83</code><br>
+              Forecast:    <code>83.78</code><br>
+              Warm containers: <code>12</code><br>
+              Energy proxy: <code>9.600</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>f7ceda99-87b5-41d9-9434-af6d09aa3c91</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 23</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>75.72</code><br>
+              Forecast:    <code>70.68</code><br>
+              Warm containers: <code>12</code><br>
+              Energy proxy: <code>9.600</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>f3deeabf-aebe-4fc8-b5bc-8c5385ea75d9</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 24</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>71.14</code><br>
+              Forecast:    <code>64.34</code><br>
+              Warm containers: <code>13</code><br>
+              Energy proxy: <code>10.400</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>6c288e60-e75f-4c77-9a06-9d6432a95d07</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 25</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>47.79</code><br>
+              Forecast:    <code>43.87</code><br>
+              Warm containers: <code>13</code><br>
+              Energy proxy: <code>10.400</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>40f6648e-7c1a-4082-ac6b-5045a7db1873</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 26</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>58.67</code><br>
+              Forecast:    <code>61.28</code><br>
+              Warm containers: <code>13</code><br>
+              Energy proxy: <code>10.400</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>63f4829e-a57d-48fb-9a80-84eeaa642c41</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 27</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>41.75</code><br>
+              Forecast:    <code>41.43</code><br>
+              Warm containers: <code>14</code><br>
+              Energy proxy: <code>11.200</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>6b0cfccf-1285-4795-b5d8-e27db2391d8d</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 28</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>46.17</code><br>
+              Forecast:    <code>43.04</code><br>
+              Warm containers: <code>14</code><br>
+              Energy proxy: <code>11.200</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>461bba46-be45-4e94-86ad-3cef8b117eb0</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 29</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>67.32</code><br>
+              Forecast:    <code>67.34</code><br>
+              Warm containers: <code>14</code><br>
+              Energy proxy: <code>11.200</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>ab343662-e804-400a-a869-43a31f279857</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 30</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>31.17</code><br>
+              Forecast:    <code>29.00</code><br>
+              Warm containers: <code>15</code><br>
+              Energy proxy: <code>12.000</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>a613a0da-55f7-4cab-8dd5-d9d2b205280f</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 31</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>34.51</code><br>
+              Forecast:    <code>35.87</code><br>
+              Warm containers: <code>15</code><br>
+              Energy proxy: <code>12.000</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>38b5d4af-af6b-427f-a7c0-8fef7b4687a2</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 32</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>24.89</code><br>
+              Forecast:    <code>24.62</code><br>
+              Warm containers: <code>15</code><br>
+              Energy proxy: <code>12.000</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>2e9eea6d-b33b-4a46-a5ce-b56e9c342823</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 33</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>25.56</code><br>
+              Forecast:    <code>24.95</code><br>
+              Warm containers: <code>16</code><br>
+              Energy proxy: <code>12.800</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>7ecafba8-5c56-4d8b-b1ac-8375026b6326</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 34</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>27.04</code><br>
+              Forecast:    <code>25.97</code><br>
+              Warm containers: <code>16</code><br>
+              Energy proxy: <code>12.800</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>5c0c9449-f64f-48f5-840b-94b83995d3bd</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 35</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>22.84</code><br>
+              Forecast:    <code>23.44</code><br>
+              Warm containers: <code>16</code><br>
+              Energy proxy: <code>12.800</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>48c1295b-7405-47f9-9999-7ec9305f9da9</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 36</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>21.95</code><br>
+              Forecast:    <code>21.34</code><br>
+              Warm containers: <code>17</code><br>
+              Energy proxy: <code>13.600</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>23d7b070-f760-46fa-85fd-ef2f7d71c18f</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 37</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>27.14</code><br>
+              Forecast:    <code>24.90</code><br>
+              Warm containers: <code>17</code><br>
+              Energy proxy: <code>13.600</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>3b4f678d-e809-4686-ab07-c8ce41f80b7a</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 38</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>23.40</code><br>
+              Forecast:    <code>21.62</code><br>
+              Warm containers: <code>17</code><br>
+              Energy proxy: <code>13.600</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>58c03510-f9c0-4c61-a350-96c74fa2d2fa</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 39</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>30.05</code><br>
+              Forecast:    <code>32.82</code><br>
+              Warm containers: <code>18</code><br>
+              Energy proxy: <code>14.400</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>1c56bf83-0881-47f9-9a06-100767cfeb47</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 40</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>26.56</code><br>
+              Forecast:    <code>28.73</code><br>
+              Warm containers: <code>18</code><br>
+              Energy proxy: <code>14.400</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>ad2c52d4-1204-4d5c-a46e-acc070c54f74</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 41</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>32.49</code><br>
+              Forecast:    <code>33.79</code><br>
+              Warm containers: <code>18</code><br>
+              Energy proxy: <code>14.400</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>e14a73e4-0461-4bf2-901c-488d93398881</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 42</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>30.50</code><br>
+              Forecast:    <code>29.08</code><br>
+              Warm containers: <code>19</code><br>
+              Energy proxy: <code>15.200</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>366fc0f5-2dd9-4ed6-abcf-84d0e3a2d58b</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 43</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>24.69</code><br>
+              Forecast:    <code>27.00</code><br>
+              Warm containers: <code>19</code><br>
+              Energy proxy: <code>15.200</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>b04fbd1b-e9ed-4aee-9dcc-cc1382b0d7a6</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 44</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>32.48</code><br>
+              Forecast:    <code>34.29</code><br>
+              Warm containers: <code>19</code><br>
+              Energy proxy: <code>15.200</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>b6f986be-8ed7-45a2-a69c-e7d2918e50e9</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 45</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>16.05</code><br>
+              Forecast:    <code>16.74</code><br>
+              Warm containers: <code>20</code><br>
+              Energy proxy: <code>16.000</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>a2357629-eef2-4c5c-8217-eaad8b7fe3ff</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 46</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>11.87</code><br>
+              Forecast:    <code>11.75</code><br>
+              Warm containers: <code>20</code><br>
+              Energy proxy: <code>16.000</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>d98bad08-7da1-4e32-9e37-005d9b2504fd</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 47</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>10.88</code><br>
+              Forecast:    <code>10.39</code><br>
+              Warm containers: <code>20</code><br>
+              Energy proxy: <code>16.000</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>5cbc95b8-32fc-40d3-ae24-f3fee5f1183d</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 48</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>14.82</code><br>
+              Forecast:    <code>13.63</code><br>
+              Warm containers: <code>21</code><br>
+              Energy proxy: <code>16.800</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>4ea54ede-fd61-40b1-8051-d3461f1ad9f0</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 49</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>9.40</code><br>
+              Forecast:    <code>10.15</code><br>
+              Warm containers: <code>21</code><br>
+              Energy proxy: <code>16.800</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>1595b1cb-e4bc-4786-8520-2c34c4ffa33a</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 50</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>10.00</code><br>
+              Forecast:    <code>9.91</code><br>
+              Warm containers: <code>21</code><br>
+              Energy proxy: <code>16.800</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>cf6c44f7-f34a-4b10-b6f2-665cb9c64b85</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 51</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>8.07</code><br>
+              Forecast:    <code>7.59</code><br>
+              Warm containers: <code>22</code><br>
+              Energy proxy: <code>17.600</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>4e02bd77-ff45-433b-b483-e75f54987ccd</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 52</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>15.87</code><br>
+              Forecast:    <code>15.25</code><br>
+              Warm containers: <code>22</code><br>
+              Energy proxy: <code>17.600</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>d1a822b8-7c37-49b0-8b47-69218ae863e1</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 53</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>14.65</code><br>
+              Forecast:    <code>14.88</code><br>
+              Warm containers: <code>22</code><br>
+              Energy proxy: <code>17.600</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>3b5996a9-7c39-4bd2-b3cb-dc0201d29c2a</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 54</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>15.05</code><br>
+              Forecast:    <code>14.08</code><br>
+              Warm containers: <code>23</code><br>
+              Energy proxy: <code>18.400</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>d0b02b5a-988a-47ea-866a-7e2c9b6878a7</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 55</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>15.81</code><br>
+              Forecast:    <code>16.93</code><br>
+              Warm containers: <code>23</code><br>
+              Energy proxy: <code>18.400</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>2f78d70c-e34f-4e02-85b5-00fe5ac70b03</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 56</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>12.59</code><br>
+              Forecast:    <code>13.24</code><br>
+              Warm containers: <code>23</code><br>
+              Energy proxy: <code>18.400</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>17d534f0-d196-4feb-8281-00fbc94c6c2f</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #77dd77;">
+          <div class="card-header">
+            <span class="step-badge">Step 57</span>
+            <span class="action-badge" style="background:#77dd77;">SCALE_OUT</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>13.69</code><br>
+              Forecast:    <code>14.29</code><br>
+              Warm containers: <code>24</code><br>
+              Energy proxy: <code>19.200</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>SCALE_OUT</code><br>
+              Rule: <code>PASS</code><br>
+              <small>All safety rules passed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>f85eff22-42f0-4ba5-bb9d-df924482a591</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 58</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>9.40</code><br>
+              Forecast:    <code>9.27</code><br>
+              Warm containers: <code>24</code><br>
+              Energy proxy: <code>19.200</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 1/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>a8957ef1-77bc-402d-a570-414d05a72c1c</code></small>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 6px solid #aec6cf;">
+          <div class="card-header">
+            <span class="step-badge">Step 59</span>
+            <span class="action-badge" style="background:#aec6cf;">NO_OP</span>
+            <span class="sla-badge">✅ Latency: 70 ms / SLA 300 ms</span>
+            <span class='warn-badge'>⚠️ OVERRIDDEN</span>
+            
+          </div>
+          <div class="card-body">
+            <div class="col">
+              <b>📊 Workload</b><br>
+              Actual load: <code>9.15</code><br>
+              Forecast:    <code>9.38</code><br>
+              Warm containers: <code>24</code><br>
+              Energy proxy: <code>19.200</code><br>
+              Cold-start proxy: <code>0.000</code>
+            </div>
+            <div class="col">
+              <b>🤖 Planner (local_rules)</b><br>
+              Suggested: <code>SCALE_OUT</code>
+              (conf=0.85)<br>
+              SLA risk: <code>low</code><br>
+              Rationale: <i>Forecast or latency near/above SLA; scaling out.</i>
+            </div>
+            <div class="col">
+              <b>🛡️ Safety Shield</b><br>
+              Input: <code>SCALE_OUT</code><br>
+              Approved: <code>NO_OP</code><br>
+              Rule: <code>COOLDOWN</code><br>
+              <small>Scale-op cooldown: 2/2 steps elapsed</small>
+            </div>
+            <div class="col">
+              <b>🎯 PPO Policy</b><br>
+              Action: <code>N/A</code>
+              (int=-1)<br>
+              <b>🔑 Correlation ID</b><br>
+              <small><code>6c60bd6f-bcc9-4ae4-93b5-14cb980488ca</code></small>
+            </div>
+          </div>
+        </div>
+</div>
+
+<script>
+function filterCards() {
+  var val = document.getElementById('searchBox').value.toLowerCase();
+  document.querySelectorAll('.card').forEach(function(c) {
+    c.style.display = val === '' || c.textContent.toLowerCase().includes(val) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

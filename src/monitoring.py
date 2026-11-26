@@ -158,6 +158,52 @@ class MonitoringLogger:
     def close(self):
         self._file.close()
 
+    # ── Feedback integration (Milestone 7) ────────────────────────────────────
+    def record_feedback(self, decision_record, step_metrics: dict) -> dict:
+        """
+        Link a DecisionRecord to its observed outcome metrics and write to
+        outputs/feedback_log.jsonl.
+
+        Parameters
+        ----------
+        decision_record : DecisionRecord (dataclass from decision_engine.py)
+        step_metrics    : dict with keys like latency_ms, sla_violation,
+                          energy_proxy, warm_containers, cold_start_proxy
+
+        Returns
+        -------
+        feedback dict written to log
+        """
+        from dataclasses import asdict as _asdict
+        import os as _os
+
+        feedback = {
+            "decision_correlation_id": getattr(decision_record, "correlation_id", ""),
+            "timestamp_step":          getattr(decision_record, "timestamp_step", -1),
+            "final_action":            getattr(decision_record, "final_action", "?"),
+            "planner_provider":        getattr(decision_record, "planner_provider", "?"),
+            "shield_overridden":       getattr(decision_record, "shield_overridden", False),
+            # Observed outcomes
+            "observed_latency_ms":     float(step_metrics.get("latency_ms", 0.0)),
+            "observed_sla_violation":  bool(step_metrics.get("sla_violation", False)),
+            "observed_energy_proxy":   float(step_metrics.get("energy_proxy", 0.0)),
+            "observed_warm_containers":int(step_metrics.get("warm_containers", 0)),
+            "observed_cold_start_proxy": float(step_metrics.get("cold_start_proxy", 0.0)),
+            "feedback_note":           str(step_metrics.get("feedback_note", "")),
+            "wall_clock_utc":          datetime.now(timezone.utc).isoformat(),
+        }
+
+        fb_path = str(self.log_path).replace(str(LOG_DIR), str(OUT)).replace(
+            ".jsonl", "_feedback.jsonl"
+        )
+        # Always write to canonical feedback log
+        fb_path = str(OUT / "feedback_log.jsonl")
+        _os.makedirs(_os.path.dirname(fb_path), exist_ok=True)
+        with open(fb_path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(feedback) + "\n")
+
+        return feedback
+
     def to_dataframe(self) -> pd.DataFrame:
         return pd.DataFrame([asdict(e) for e in self.events])
 

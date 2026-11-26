@@ -1,0 +1,11 @@
+scenario_id,provider,model_id,action,confidence,sla_risk,fallback_used,fallback_reason,inference_ms,valid_output,scenario_name,latency_ms,forecast_load
+S01,local_rules,rules_v1,SCALE_IN,0.85,low,False,,0.1,True,low_load,80,0.05
+S02,local_rules,rules_v1,SCALE_OUT,0.85,high,False,,0.0,True,burst,450,0.98
+S03,local_rules,rules_v1,SCALE_OUT,0.85,high,False,,0.0,True,high_lat,350,0.65
+S04,local_rules,rules_v1,SCALE_IN,0.85,low,False,,0.0,True,idle,50,0.0
+S05,local_rules,rules_v1,NO_OP,0.85,low,False,,0.0,True,normal,150,0.45
+S06,local_rules,rules_v1,SCALE_OUT,0.85,low,False,,0.0,True,ramp_up,120,0.8
+S07,local_rules,rules_v1,SCALE_IN,0.85,low,False,,0.0,True,ramp_down,200,0.2
+S08,local_rules,rules_v1,SCALE_OUT,0.85,medium,False,,0.0,True,near_sla,285,0.72
+S09,local_rules,rules_v1,SCALE_OUT,0.85,high,False,,0.0,True,overloaded,800,1.0
+S10,local_rules,rules_v1,REUSE,0.85,low,False,,0.0,True,stable_high,190,0.57

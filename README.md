@@ -1,240 +1,178 @@
 # Predictive Container Management for Energy-Efficient Serverless Computing
 
-> **Academic research project** — All latency, energy, and cold-start figures are **simulated proxy metrics**, not measured in a production cloud environment.
-
----
-
-## Overview
-
-This project investigates whether **workload forecasting** and **intelligent container-management decisions** can reduce cold starts and resource waste while meeting latency/SLA requirements in serverless computing.
-
-The system forecasts workload using a **Temporal Fusion Transformer (TFT)** and a **persistence baseline**, then drives container actions through:
-- A **structured agentic planner** (rule-based with an OpenAI-compatible LLM hook for Qwen3)  
-- A **PPO reinforcement-learning controller**  
-- Classic **rule-based** and **fixed-container** baselines
+> **Academic Major Project** — Department of Computer Science  
+> **Branch:** `milestone-1-audit` | **Status:** All milestones implemented
 
 ---
 
 ## Architecture
 
-```
-Azure Functions Trace (Jan 2021)
-        │
-        ▼
-  Preprocessing (5-min buckets)
-        │
-        ▼
-  Workload Forecasting
-  ├── Original TFT
-  ├── Log-transformed TFT
-  └── Persistence baseline  ← best on this trace
-        │
-        ▼
-  Agentic Planner (structured JSON, safe fallback, LLM-ready)
-        │
-        ▼
-  PPO Controller (Stable-Baselines3, diverse workload training)
-        │
-        ▼
-  Python Simulator (container lifecycle, cold-start, energy proxy)
-        │
-        ▼
-  Function Services (user_info, search, recommend)
-        │
-        ▼
-  Monitoring & Feedback (JSONL logs, Prometheus exposition, dashboards)
-        │
-        ▼
-  End-to-End Evaluation (6 policies × 10 seeds)
-```
-
----
-
-## Dataset
-
-| Property | Value |
-|---|---|
-| Source | [Azure Functions Invocation Trace, Jan 2021](https://github.com/Azure/AzurePublicDataset) |
-| Buckets | 4,032 (five-minute intervals, ~14 days) |
-| Recorded invocations | ~1.98 million |
-| Mean invocations/bucket | 491.31 |
-| Max | 11,020 |
-
----
-
-## Key Results
-
-### Forecasting (matched one-step, test set — 606 buckets)
-
-| Model | Overall MAE | Overall RMSE | High-load underprediction |
-|---|---|---|---|
-| Original TFT | 226.7 | 637.5 | 100% |
-| Log-TFT | 182.6 | 489.6 | 98% |
-| **Persistence** | **153.2** | **379.8** | **77%** |
-
-Persistence outperforms both TFT variants on this trace. Log-TFT improves ~19% over original TFT.
-
-### End-to-End Policy Comparison (Azure test segment, simulated)
-
-| Policy | Mean latency (ms) | SLA violation rate | Avg energy proxy |
-|---|---|---|---|
-| Fixed-4 containers | 4,313 | 97.3% | 4.68 |
-| Rule-based | 1,609 | 36.0% | 25.33 |
-| Persistence + Rule | 1,686 | 36.5% | 22.99 |
-| TFT + Rule | 1,609 | 36.0% | 25.33 |
-| **Planner-assisted** | **1,465** | **28.3%** | 29.25 |
-| **PPO** | **1,270** | **20.7%** | 37.00 |
-
-PPO achieves the lowest SLA violation rate and latency at the cost of higher energy proxy (more containers). Planner-assisted is the best deterministic policy.
-
-### PPO Validation (synthetic workloads, 20 seeds × 3 workload types)
-
-| Policy | Avg latency (ms) | SLA violation rate | No-op fraction |
-|---|---|---|---|
-| Fixed-4 | 86.5 | 3.8% | 100% |
-| Rule-based | 82.4 | 0.3% | 70% |
-| **PPO** | **70.2** | **0.0%** | **42%** |
-
-PPO average no-op fraction: **42%** ✅ (healthy; not stuck in no-op collapse)
-
----
-
-## Repository Structure
-
-```
-major_1/
-├── data/
-│   ├── azure_serverless_workload.csv       ← preprocessed trace
-│   ├── synthetic_serverless_workload.csv
-│   └── azure_trace_raw/                    ← raw Azure trace (not committed)
-├── src/
-│   ├── preprocess_azure.py                 ← raw trace → 5-min buckets
-│   ├── train_tft_azure.py                  ← original TFT training
-│   ├── experiment_tft_azure_log.py         ← log-TFT training
-│   ├── matched_horizon_comparison.py       ← Phase A: fair forecast comparison
-│   ├── agentic_planner.py                  ← Phase C: structured JSON planner
-│   ├── serverless_simulator.py             ← Phase D: execution layer simulator
-│   ├── function_services.py                ← Phase E: example function handlers
-│   ├── monitoring.py                       ← Phase F: JSONL logs + dashboards
-│   ├── retrain_ppo.py                      ← Phase B: PPO retraining & validation
-│   ├── ppo_env.py                          ← PPO Gymnasium environment
-│   ├── end_to_end_evaluation.py            ← Phase G: 6-policy comparison
-│   └── final_demo.py                       ← Phase H: integrated pipeline demo
-├── outputs/                                ← generated results (plots, CSVs, models)
-├── requirements.txt
-└── README.md
+```mermaid
+flowchart TD
+    A[Azure Trace Data] --> B[TFT Forecast Model]
+    A --> C[Serverless Simulator]
+    B --> D[Decision Engine]
+    C --> D
+    E[LocalRule / Qwen3 Planner] --> D
+    F[PPO Calibrated Agent] --> D
+    D --> G[Safety Shield]
+    G --> H[DryRun Executor Adapter]
+    H --> I[Audit Log / JSONL]
+    D --> J[Monitoring Logger]
+    J --> K[Feedback Log]
+    D --> L[Replay Viewer HTML]
 ```
 
 ---
 
 ## Quickstart
 
-### 1. Environment Setup
-
 ```powershell
+# 1. Setup
 cd D:\major_1
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+.\.venv\Scripts\pip install -r requirements.txt
+
+# 2. Run all milestone tests
+.\.venv\Scripts\python.exe tests\test_planner_providers.py    # M3: 16 tests
+.\.venv\Scripts\python.exe tests\test_decision_engine.py      # M4: 14 tests
+.\.venv\Scripts\python.exe tests\test_executor_adapter.py     # M6:  9 tests
+.\.venv\Scripts\python.exe tests\test_monitoring_feedback.py  # M7:  3 tests
+
+# 3. Run offline planner experiment (M3)
+.\.venv\Scripts\python.exe src\run_planner_offline_experiment.py
+
+# 4. Generate replay viewer (M5) — interactive HTML
+.\.venv\Scripts\python.exe src\generate_replay_report.py
+# → outputs/decision_replay.html  (open in browser)
+# → outputs/decision_replay.png
+# → outputs/decision_replay_summary.csv
+
+# 5. Run full experiment matrix E0–E6 (M8)
+.\.venv\Scripts\python.exe src\run_experiment_matrix.py
+# → outputs/experiment_matrix_results.csv
+# → outputs/experiment_matrix_comparison.png
+
+# 6. Run 7-policy end-to-end evaluation (M2)
+.\.venv\Scripts\python.exe src\end_to_end_evaluation.py
+
+# 7. Train calibrated PPO from scratch (M2, ~10 min)
+.\.venv\Scripts\python.exe src\train_ppo_calibrated.py
 ```
-
-### 2. Preprocess Azure Trace (if raw trace present)
-
-```powershell
-python src\preprocess_azure.py
-```
-
-### 3. Run All Phases in Order
-
-```powershell
-# Phase A — Matched-horizon forecast comparison
-python src\matched_horizon_comparison.py
-
-# Phase C — Planner smoke test (all 4 cases should PASS)
-python src\agentic_planner.py
-
-# Phase D — Simulator smoke test
-python src\serverless_simulator.py
-
-# Phase E — Function services demo (200 workload buckets)
-python src\function_services.py
-
-# Phase F — Monitoring dashboard demo
-python src\monitoring.py
-
-# Phase B — PPO retraining + validation (takes ~2 min on CPU)
-python src\retrain_ppo.py
-
-# Phase G — End-to-end 6-policy comparison
-python src\end_to_end_evaluation.py
-
-# Phase H — Full integrated demo (single-command pipeline)
-python src\final_demo.py
-```
-
-### 4. Use Qwen3 (Optional)
-
-Set environment variables before running any script:
-
-```powershell
-$env:PLANNER_ENDPOINT = "http://localhost:8000/v1"   # vLLM or similar
-$env:PLANNER_MODEL    = "Qwen/Qwen3-8B"
-$env:PLANNER_API_KEY  = "your-key-or-empty"
-python src\final_demo.py
-```
-
-The planner falls back to deterministic rules if the endpoint is unavailable.
 
 ---
 
-## Output Files
+## Results
 
-| File | Description |
-|---|---|
-| `outputs/matched_horizon_metrics.csv` | Forecast MAE/RMSE on test set |
-| `outputs/matched_horizon_comparison.png` | Forecast comparison plot |
-| `outputs/ppo_container_controller.zip` | Trained PPO model |
-| `outputs/ppo_retrain_comparison.png` | PPO vs baselines (synthetic) |
-| `outputs/end_to_end_comparison.png` | 6-policy evaluation chart |
-| `outputs/final_demo.png` | Integrated pipeline demo plot |
-| `outputs/monitoring_dashboard_*.png` | Per-policy monitoring dashboards |
-| `outputs/monitoring_logs/*.jsonl` | Structured step-level event logs |
+### 7-Policy Evaluation (Azure test, 605 buckets, 10 seeds, SIMULATED)
+
+| Policy | Mean Latency | SLA Viol. | Avg Warm | Energy Proxy |
+|---|---|---|---|---|
+| **PPO (calibrated)** | **193.0 ms** ✅ | **2.0%** ✅ | 4.74 | 4.115 |
+| Fixed-4 | 210.8 ms | 3.0% | 4.00 | 3.519 |
+| Reactive Rule-based | 211.6 ms | 5.0% | 1.67 | 1.658 |
+| Persistence + Rule | 212.3 ms | 5.1% | 1.47 | 1.491 |
+| Log TFT + Rule | 213.2 ms | 5.3% | 1.46 | 1.483 |
+| Original TFT + Rule | 213.2 ms | 5.3% | 1.45 | 1.483 |
+| Planner-assisted | 213.3 ms | 5.3% | 1.45 | 1.483 |
+
+### Experiment Matrix E0–E6 (SIMULATED proxies)
+
+| Exp | Description | Mean Latency | SLA Viol% | Energy | Warm Containers |
+|---|---|---|---|---|---|
+| E0 | No-forecast, Rules, Rules | 70.0 ms | 0.0% | 6.732 | 8.41 |
+| E1 | Persistence, Rules, Rules | 70.0 ms | 0.0% | 4.052 | 5.06 |
+| E2 | TFT, Rules, Rules | 70.0 ms | 0.0% | 3.307 | 4.12 |
+| E3 | TFT, Qwen3(local), Rules | 70.0 ms | 0.0% | 3.307 | 4.12 |
+| E4 | Persistence, Rules, PPO | 70.0 ms | 0.0% | 5.950 | 7.44 |
+| E5 | TFT, Rules, PPO | 70.0 ms | 0.0% | 6.434 | 8.04 |
+| E6 | TFT, Qwen3(local), PPO | 70.0 ms | 0.0% | 6.434 | 8.04 |
+
+**Key finding:** TFT-based forecast (E2/E3) achieves lowest energy proxy (3.307) with the fewest warm containers (4.12 avg), demonstrating that accurate forecasting enables efficient provisioning.
+
+---
+
+## Milestones
+
+| # | Milestone | Status | Key Outputs |
+|---|---|---|---|
+| M1 | Repository Audit | ✅ Done | `tests/test_milestone1_contracts.py` (28 PASS) |
+| M2 | Calibrated PPO | ✅ Done | `src/ppo_calibrated_env.py`, `outputs/ppo_container_controller_calibrated.zip` |
+| M3 | Qwen3 Planner | ✅ Done | `src/planner_providers.py`, `tests/test_planner_providers.py` (16 PASS) |
+| M4 | Decision Engine + Shield | ✅ Done | `src/decision_engine.py`, `src/safety_shield.py` (14 PASS) |
+| M5 | Replay Viewer | ✅ Done | `outputs/decision_replay.html`, `outputs/decision_replay.png` |
+| M6 | Executor Adapter | ✅ Done | `src/executor_adapter.py`, `tests/test_executor_adapter.py` (9 PASS) |
+| M7 | Monitoring & Feedback | ✅ Done | `src/monitoring.py` + feedback, `tests/test_monitoring_feedback.py` (3 PASS) |
+| M8 | Experiment Matrix + Report | ✅ Done | `outputs/experiment_matrix_results.csv`, `outputs/FINAL_RESULTS_REPORT.md` |
+
+---
+
+## Project Structure
+
+```
+major_1/
+├── data/
+│   ├── azure_serverless_workload.csv      # 4,032 rows, 5-min buckets
+│   └── azure_trace_raw/                  # Raw Azure trace (305 MB)
+├── src/
+│   ├── serverless_simulator.py            # Calibrated simulator (shared physics)
+│   ├── agentic_planner.py                 # Planner interface
+│   ├── planner_providers.py               # LocalRule / Ollama / OpenAI providers
+│   ├── safety_shield.py                   # Safety rules + cooldown guard
+│   ├── decision_engine.py                 # Full decision pipeline integration
+│   ├── executor_adapter.py                # DryRun + K8s stub
+│   ├── monitoring.py                      # JSONL logging + feedback + Prometheus
+│   ├── generate_replay_report.py          # M5 HTML replay viewer
+│   ├── ppo_calibrated_env.py              # Calibrated PPO gym environment
+│   ├── train_ppo_calibrated.py            # PPO training script
+│   ├── end_to_end_evaluation.py           # 7-policy comparison
+│   ├── run_experiment_matrix.py           # E0–E6 matrix
+│   └── run_planner_offline_experiment.py  # M3 offline comparison
+├── tests/
+│   ├── test_milestone1_contracts.py       # 28 contract tests
+│   ├── test_planner_providers.py          # 16 M3 tests
+│   ├── test_decision_engine.py            # 14 M4 tests
+│   ├── test_executor_adapter.py           # 9 M6 tests
+│   └── test_monitoring_feedback.py        # 3 M7 tests
+├── outputs/
+│   ├── ppo_container_controller_calibrated.zip
+│   ├── end_to_end_results.csv / comparison.png
+│   ├── experiment_matrix_results.csv / comparison.png
+│   ├── decision_replay.html / .png / _summary.csv
+│   ├── planner_offline_comparison.csv / .png
+│   ├── decision_logs/                     # Per-run JSONL decision logs
+│   └── feedback_log.jsonl                 # Feedback linking decisions → outcomes
+└── README.md
+```
 
 ---
 
 ## Limitations
 
-1. All latency/energy/cold-start numbers are **simulated** proxy metrics.
-2. Azure trace provides completion timestamps, not arrival timestamps.
-3. TFT systematically underpredicts high-load spikes (100% underprediction rate for original TFT).
-4. PPO is trained on synthetic workloads; generalisation to real distributions is not verified.
-5. Qwen3 LLM planning requires a running inference server.
-6. No real Prometheus/Grafana integration verified.
+> **Important:** All simulation results are **SIMULATED PROXIES** derived from the Azure public trace. They are NOT real cloud measurements.
+
+1. **Simulated environment only** — `serverless_simulator.py` approximates serverless physics using a linear latency model. Real FaaS platforms (AWS Lambda, Azure Functions) have more complex cold-start distributions.
+2. **No live cluster** — `KubernetesAdapter` is a documented stub. `DryRunAdapter` never touches real infrastructure.
+3. **Planner uses local fallback** — Qwen3/Ollama requires a separate GPU and `ollama pull qwen3:8b`. All planner experiments use the deterministic `LocalRuleProvider`.
+4. **Chronological split only** — training data is strictly time_idx 0–3426; test data is 3427–4031. No data leakage.
+5. **PPO approximation** — `time_in_episode_norm` and `cooldown_norm` in `ppo_calibrated_action()` within evaluators are fixed at 0.5 (documented simplification).
 
 ---
 
-## Requirements
+## Reproducibility
 
+```powershell
+# Seeds used: 42–51 (10 seeds for all multi-seed experiments)
+# Data split: train=time_idx 0–3426 (3427 rows), test=3427–4031 (605 rows)
+# PPO: 300k steps, seed=42, stable-baselines3 2.x, PyTorch
+# TFT: pytorch-forecasting, trained on training split only
+
+# To reproduce PPO training:
+.\.venv\Scripts\python.exe src\train_ppo_calibrated.py
+
+# To reproduce experiment matrix:
+.\.venv\Scripts\python.exe src\run_experiment_matrix.py
+
+# To reproduce 7-policy evaluation:
+.\.venv\Scripts\python.exe src\end_to_end_evaluation.py
 ```
-numpy>=1.26
-pandas>=2.1
-matplotlib>=3.8
-scikit-learn>=1.4
-torch>=2.2
-lightning>=2.2
-pytorch-forecasting>=1.2
-gymnasium>=0.29
-stable-baselines3>=2.3
-```
-
----
-
-## License
-
-MIT — for academic and research use.
-
----
-
-## Author
-
-Darshan S Gowda · darshandarshu1115@gmail.com

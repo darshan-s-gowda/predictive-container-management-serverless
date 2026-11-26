@@ -44,6 +44,8 @@ outputs/monitoring_logs/
 
 # Planner logs (generated at runtime)
 outputs/planner_logs/
+outputs/test_*_audit.jsonl
+outputs/decision_logs/decision_*test.jsonl
 
 # Jupyter
 .ipynb_checkpoints/

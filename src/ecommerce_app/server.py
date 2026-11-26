@@ -543,12 +543,31 @@ class ShopPulseHandler(BaseHTTPRequestHandler):
         self._send_json(404, {"error": "not found"})
 
 
-def run_server(port: int = 8080):
+def run_server(port: int = 8501):
     global ORCH
+    host = os.environ.get("SHOPPULSE_HOST", "127.0.0.1")
+    candidate_ports = [port, 8501, 8888, 9050, 5050, 0]
+    seen = set()
+    server = None
+    bound_port = port
+    for cand in candidate_ports:
+        if cand in seen:
+            continue
+        seen.add(cand)
+        try:
+            server = ThreadingHTTPServer((host, cand), ShopPulseHandler)
+            bound_port = server.server_address[1]
+            if cand != port:
+                print(f"[ShopPulse] Port {port} unavailable on Windows; bound to port {bound_port} instead.", flush=True)
+            break
+        except OSError as e:
+            if cand == 0:
+                raise
+            print(f"[ShopPulse] Could not bind {host}:{cand} ({e}); trying next port...", flush=True)
+
     ORCH = LiveServerlessOrchestrator(initial_workers=2)
-    server = ThreadingHTTPServer(("0.0.0.0", port), ShopPulseHandler)
-    print(f"[ShopPulse] Live at http://127.0.0.1:{port}", flush=True)
-    print(f"[ShopPulse] Prometheus metrics at http://127.0.0.1:{port}/metrics", flush=True)
+    print(f"[ShopPulse] Live at http://127.0.0.1:{bound_port}", flush=True)
+    print(f"[ShopPulse] Prometheus metrics at http://127.0.0.1:{bound_port}/metrics", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -559,5 +578,5 @@ def run_server(port: int = 8080):
 
 
 if __name__ == "__main__":
-    p = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+    p = int(sys.argv[1]) if len(sys.argv) > 1 else 8501
     run_server(p)

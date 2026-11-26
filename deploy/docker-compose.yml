@@ -6,6 +6,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      - SHOPPULSE_HOST=0.0.0.0
       - PLANNER_BACKEND=${PLANNER_BACKEND:-local}
       - PLANNER_ENDPOINT=${PLANNER_ENDPOINT:-http://host.docker.internal:11434}
       - PLANNER_MODEL=${PLANNER_MODEL:-qwen3:8b}

@@ -290,6 +290,11 @@ class LiveServerlessOrchestrator:
             raise ValueError("mode must be 'predictive' or 'reactive'")
         with self._lock:
             self._mode = mode
+            self._scheduled_spike_until = 0.0
+        # Trim excess idle workers back to 2 for fair Predictive vs Reactive comparison
+        while len(self._workers) > 2:
+            if not self._terminate_one_idle():
+                break
         return mode
 
     def notify_upcoming_spike(self, duration_s: float = 12.0, expected_rps: float = 12.0):
@@ -399,7 +404,17 @@ class LiveServerlessOrchestrator:
 
         # Execute on real worker pool
         exec_note = "no-op"
-        if final_action in ("PREWARM", "SCALE_OUT"):
+        if final_action == "PREWARM" and spike_active:
+            target = min(10, self.MAX_WORKERS, max(warm_count + 1, int(np.ceil(forecast_rps / 2.0))))
+            to_spawn = max(1, target - warm_count)
+            try:
+                import concurrent.futures as _cf
+                with _cf.ThreadPoolExecutor(max_workers=to_spawn) as _pool:
+                    spawned = list(_pool.map(lambda _: self._spawn_worker_sync(), range(to_spawn)))
+                exec_note = f"prewarmed +{len(spawned)} containers (target={target})"
+            except Exception as e:
+                exec_note = f"prewarm failed: {e}"
+        elif final_action in ("PREWARM", "SCALE_OUT"):
             try:
                 new_w = self._spawn_worker_sync()
                 exec_note = f"spawned {new_w.worker_id} (boot {new_w.boot_ms:.0f}ms)"
